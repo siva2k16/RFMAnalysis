@@ -1,6 +1,6 @@
 # RFM Analysis 
 # Set the Working directory
-setwd("~/Desktop/Satish patil/RFM analysis")
+setwd("")
 
 # Load the libraries
 library(dplyr)
@@ -82,5 +82,40 @@ Billing = finalretailsales %>% group_by(InvoiceNo,CustomerID) %>% summarise(Tran
 Frequency = sqldf("select CustomerID, count(CustomerID) as Frequency from Billing group by CustomerID")
 
 
-# Joining the Recency,Freqency and Monetory Value tables to one table.
+# Assigning Scores to each and every customer based on his Recency, Frequency and Monetary values 
 
+#Recency Score Allocation
+Recency$Recency = as.numeric(Recency$Recency)
+summary(Recency$Recency)
+Recency$Recency[Recency$Recency <= quantile(Recency$Recency,0.2)] <- 1
+Recency$Recency[Recency$Recency > quantile(Recency$Recency,0.2) & Recency$Recency <= quantile(Recency$Recency,0.4)] <- 2
+Recency$Recency[Recency$Recency > quantile(Recency$Recency,0.4) & Recency$Recency <= quantile(Recency$Recency,0.6)] <- 3
+Recency$Recency[Recency$Recency > quantile(Recency$Recency,0.6) & Recency$Recency <= quantile(Recency$Recency,0.8)] <- 4
+Recency$Recency[Recency$Recency > quantile(Recency$Recency,0.8) & Recency$Recency <= quantile(Recency$Recency,1)] <- 5
+
+
+#Frequency Score Allocation 
+str(Frequency)
+Frequency$Frequency[Frequency$Frequency <= quantile(Frequency$Frequency,0.2)] <- 1
+Frequency$Frequency[Frequency$Frequency > quantile(Frequency$Frequency,0.2) & Frequency$Frequency <= quantile(Frequency$Frequency,0.4)] <- 2
+Frequency$Frequency[Frequency$Frequency > quantile(Frequency$Frequency,0.4) & Frequency$Frequency <= quantile(Frequency$Frequency,0.6)] <- 3
+Frequency$Frequency[Frequency$Frequency > quantile(Frequency$Frequency,0.6) & Frequency$Frequency <= quantile(Frequency$Frequency,0.8)] <- 4
+Frequency$Frequency[Frequency$Frequency > quantile(Frequency$Frequency,0.8) & Frequency$Frequency <= quantile(Frequency$Frequency,1)] <- 5
+
+
+# Monetory Score Allocation 
+str(Monetory)
+Monetory$Monetory[Monetory$Monetory <= quantile(Monetory$Monetory,0.2)] <- 1
+Monetory$Monetory[Monetory$Monetory > quantile(Monetory$Monetory,0.2) & Monetory$Monetory <= quantile(Monetory$Monetory,0.4)] <- 2
+Monetory$Monetory[Monetory$Monetory > quantile(Monetory$Monetory,0.4) & Monetory$Monetory <= quantile(Monetory$Monetory,0.6)] <- 3
+Monetory$Monetory[Monetory$Monetory > quantile(Monetory$Monetory,0.6) & Monetory$Monetory <= quantile(Monetory$Monetory,0.8)] <- 4
+Monetory$Monetory[Monetory$Monetory > quantile(Monetory$Monetory,0.8) & Monetory$Monetory <= quantile(Monetory$Monetory,1)] <- 5
+
+
+# Joining the Recency,Freqency and Monetory Value tables to one table.
+RFM <- sqldf("select Recency.CustomerID,Recency,Frequency,Monetory from Recency,Frequency,Monetory where Recency.CustomerID = Frequency.CustomerID and Frequency.CustomerID = Monetory.CustomerID")
+
+# Allocating score to each and every user 
+RFM = mutate(RFM, RFMscore = paste0(RFM$Recency,RFM$Frequency,RFM$Monetory))
+RFM$RFMscore <- as.integer(RFM$RFMscore)
+str(RFM)
