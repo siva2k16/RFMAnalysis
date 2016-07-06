@@ -176,5 +176,40 @@ summary(segment3)
 # Segment3 are Churn/dead customers. Entice them with offers to visit the stores.
 
 
+# Market Basket Analysis 
+length(unique(finalretailsales$Description)) #3876
+length(unique(finalretailsales$InvoiceNo)) # 18534
+
+library(arules) ## a-rules package for association rules 
+# computational enviroment for mining association rules 
+# frequent item sets 
+
+## We need to manipulate the data a bit for arules
+totaltransactions <- split(x=finalretailsales$Description,f=finalretailsales$InvoiceNo) #split into a list of users
+totaltransactions <- lapply(totaltransactions, unique) # remove item duplicates 
+
+totaltransactions <- as(totaltransactions,"transactions")
+## view this as a list of "transactions"
+## transactions is a data class defined in arules
+
+itemFrequency(totaltransactions)
+## lists the support of the 4,224 bands
+## number of times band is listed to on the shopping trips of 15,000 users.
+## Computes the rel freq each artist mentioned by the 15,000 users
+
+
+
+itemFrequencyPlot(totaltransactions,support = 0.03,cex.names=1.5)
+## plots the item frequencies (only bands with >% support)
+
+
+## Finally, we build the association rules
+## only rules with support > 0.01 and confidence > .50
+## so it can't be a super rare band
+retail_association_rules <- apriori(totaltransactions, parameter = list(support=.01,confidence=.5))
+inspect(retail_association_rules)
+
+
+
 
 
