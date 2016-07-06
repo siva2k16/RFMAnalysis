@@ -1,6 +1,6 @@
 # RFM Analysis 
 # Set the Working directory
-setwd("")
+setwd("~/Desktop/Satish patil/RFM analysis")
 
 # Load the libraries
 library(dplyr)
@@ -65,7 +65,7 @@ finalretailsales %>% ggvis(~UnitPrice) %>% layer_histograms()
 Recency = finalretailsales %>% group_by(CustomerID) %>% summarise(lastpurchasedate = max(InvoiceDate))
 Recency = mutate(Recency , Date = substr(x = Recency$lastpurchasedate, start = 0, stop = 10))
 Recency$Date = ymd(Recency$Date)
-maxdate = ymd(substr(max(retailsales$InvoiceDate), start = 0, stop = 10))
+maxdate = ymd("2012-01-01")
 Recency = mutate(Recency, Recency = maxdate - Date)
 Recency = Recency[,c(1,4)]
 
@@ -81,11 +81,13 @@ Monetory = finalretailsales %>% group_by(CustomerID) %>% summarise(Monetory = su
 Billing = finalretailsales %>% group_by(InvoiceNo,CustomerID) %>% summarise(TransactionAmount = sum(TotalAmount))
 Frequency = sqldf("select CustomerID, count(CustomerID) as Frequency from Billing group by CustomerID")
 
+# RFM Table
+Recency$Recency = as.numeric(Recency$Recency)
+RFM_Values <- sqldf("select Recency.CustomerID,Recency,Frequency,Monetory from Recency,Frequency,Monetory where Recency.CustomerID = Frequency.CustomerID and Frequency.CustomerID = Monetory.CustomerID")
 
 # Assigning Scores to each and every customer based on his Recency, Frequency and Monetary values 
 
 #Recency Score Allocation
-Recency$Recency = as.numeric(Recency$Recency)
 summary(Recency$Recency)
 Recency$Recency[Recency$Recency <= quantile(Recency$Recency,0.2)] <- 1
 Recency$Recency[Recency$Recency > quantile(Recency$Recency,0.2) & Recency$Recency <= quantile(Recency$Recency,0.4)] <- 2
@@ -119,3 +121,43 @@ RFM <- sqldf("select Recency.CustomerID,Recency,Frequency,Monetory from Recency,
 RFM = mutate(RFM, RFMscore = paste0(RFM$Recency,RFM$Frequency,RFM$Monetory))
 RFM$RFMscore <- as.integer(RFM$RFMscore)
 str(RFM)
+
+
+# Clustering the Users. We basically want to find the most valuable customers, Frequent Shoppers and 
+# Expected or churn customers. So divding the Shoppers into 3 clusters 
+## K-means
+
+#Converting the 1st column into rownames in the RFM_Values data.
+rownames(RFM_Values) <- RFM_Values[,1]
+RFM_Values = RFM_Values[,-1]
+
+# Set the seed.
+set.seed(1)
+RFMscale <- scale(RFM_Values)
+Clustering <- kmeans(RFM_Values,centers = 3)
+
+# list of cluster assignments
+o = order(Clustering$cluster)
+clustered_customers = data.frame(Clustering$cluster[o])
+clustered_customers$CustomerID = rownames(clustered_customers)
+colnames(clustered_customers)[1] <- "customer_segment"
+
+# Bringing back the RFM_Values customer ID to the columns
+RFM_Values$CustomerID = rownames(RFM_Values)
+
+#Final_Clustered_Customers 
+Final_clustered_customers = sqldf("select RFM_Values.CustomerID,RFM_Values.Recency,RFM_Values.Frequency,RFM_Values.Monetory,clustered_customers.customer_segment from RFM_Values,clustered_customers where RFM_Values.CustomerID = clustered_customers.CustomerID")
+str(Final_clustered_customers)
+Final_clustered_customers$CustomerID <- as.factor(Final_clustered_customers$CustomerID)
+
+
+# 
+RFMscore_segment = sqldf("select RFM.CustomerID,RFM.RFMscore,Fcc.customer_segment from RFM,Final_clustered_customers as Fcc where RFM.CustomerID = Fcc.CustomerID")
+
+
+
+#Saving Files into 3 
+segment1 <- filter(Final_clustered_customers, customer_segment == 1)
+segment2 <- filter(Final_clustered_customers, customer_segment == 2)
+segment3 <- filter(Final_clustered_customers, customer_segment == 3)
+
