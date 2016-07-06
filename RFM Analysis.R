@@ -1,6 +1,6 @@
 # RFM Analysis 
 # Set the Working directory
-setwd("~/Desktop/Satish patil/RFM analysis")
+setwd("")
 
 # Load the libraries
 library(dplyr)
@@ -156,8 +156,25 @@ RFMscore_segment = sqldf("select RFM.CustomerID,RFM.RFMscore,Fcc.customer_segmen
 
 
 
-#Saving Files into 3 
-segment1 <- filter(Final_clustered_customers, customer_segment == 1)
-segment2 <- filter(Final_clustered_customers, customer_segment == 2)
+#Segmenting the customers
+segment1 <- filter(Final_clustered_customers, customer_segment == 1) # Shoppers 
+summary(segment1)
+#Total Customers - 4 | Median Recency - 24 | Median Frequency - 67 | Median Monetory - 227104
+
+segment2 <- filter(Final_clustered_customers, customer_segment == 2) # Best Valueable
+summary(segment2)
+#Total Customers - 32 | Median Recency - 27 | Median Frequency - 32 | Median Monetory - 41524
+
 segment3 <- filter(Final_clustered_customers, customer_segment == 3)
+summary(segment3)
+#Total Customers - 32 | Median Recency - 74 | Median Frequency - 2 | Median Monetory - 664.1
+
+
+#Description
+#Segment1 are the most loyal and frequent shoppers. Privileage them.
+#Segment2 are the most Valuable customers. cross sell/upsell them 
+# Segment3 are Churn/dead customers. Entice them with offers to visit the stores.
+
+
+
 
