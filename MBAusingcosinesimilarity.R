@@ -1,6 +1,6 @@
 # 
 # Set the Working directory
-setwd("~/Desktop/Satish patil/RFM analysis")
+setwd("")
 
 # Load the libraries
 library(dplyr)
@@ -122,8 +122,14 @@ for(i in 1:nrow(DataMatrix)){
       y1 <- y1[1]
       un <- c(un,y1)
       un = sort(un,decreasing = TRUE)
-      un = un[1:10]
     }
+    num <- NULL
+    for(d in 1:length(x)){
+      x1 <- which(names(un) == colnames(x)[d])
+      num <- c(num,x1)
+    }
+    un <- un[-num]
+    un <- un[1:10]
     name <- rownames(DataMatrix[i,])
     mylist[[name]] <- names(un)
     top10 = NULL # This is very important. 
@@ -132,3 +138,5 @@ for(i in 1:nrow(DataMatrix)){
 
 # A Large list with all the users Predictions are there in mylist 
 mylist$`12348`
+# This works just super fine. 
+# Any bugs, please inform me.
